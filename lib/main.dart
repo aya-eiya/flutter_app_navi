@@ -43,16 +43,18 @@ class _MainPageState extends State<MainPage> {
       ),
       body: Navigator(
           observers: <NavigatorObserver>[_PageNaviObserver(_changeTitle)],
-          onGenerateRoute: (RouteSettings settings) => _Page1.createRoute()));
+          onGenerateRoute: (RouteSettings settings) =>
+              _PageRouteBuilder.createRoute(() => const _Page1())));
 }
 
 class _PageNaviObserver extends NavigatorObserver {
   _PageNaviObserver(this.changeTitle) : super();
   final void Function(String) changeTitle;
-  bool initialized = false;
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+    // previousRoute が null のときは _MainPageState を初期化中のため
+    // setState でエラーを起こすので changeTitle を実行しない
     if (previousRoute != null && route.settings?.name != null) {
       changeTitle(route.settings.name);
     }
@@ -60,7 +62,7 @@ class _PageNaviObserver extends NavigatorObserver {
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
-    if (route.settings?.name != null) {
+    if (previousRoute.settings?.name != null) {
       changeTitle(previousRoute.settings.name);
     }
   }
@@ -73,17 +75,12 @@ mixin _Page implements Widget {
 class _Page1 extends StatelessWidget with _Page {
   const _Page1({Key key}) : super(key: key);
 
-  static MaterialPageRoute<_Page> createRoute() {
-    const _Page page = _Page1();
-    return MaterialPageRoute<_Page>(
-        builder: (_) => page, settings: RouteSettings(name: page.title));
-  }
-
   @override
   String get title => 'page 1';
 
   @override
   Widget build(BuildContext context) {
+    const _Page nextPage = _Page2();
     return Center(
         child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -91,7 +88,8 @@ class _Page1 extends StatelessWidget with _Page {
         const Text('this is page 1'),
         RaisedButton(
           onPressed: () {
-            Navigator.of(context).push(_Page2.createRoute());
+            Navigator.of(context)
+                .push(_PageRouteBuilder.createRoute(() => nextPage));
           },
           child: const Text('Page 2'),
         )
@@ -104,12 +102,6 @@ class _Page2 extends StatelessWidget with _Page {
   const _Page2({
     Key key,
   }) : super(key: key);
-
-  static MaterialPageRoute<_Page> createRoute() {
-    const _Page page = _Page2();
-    return MaterialPageRoute<_Page>(
-        builder: (_) => page, settings: RouteSettings(name: page.title));
-  }
 
   @override
   String get title => 'page 2';
@@ -129,5 +121,14 @@ class _Page2 extends StatelessWidget with _Page {
         )
       ],
     ));
+  }
+}
+
+abstract class _PageRouteBuilder {
+  static MaterialPageRoute<_Page> createRoute(_Page Function() builder) {
+    final _Page page = builder();
+    return MaterialPageRoute<_Page>(
+        builder: (_) => page,
+        settings: RouteSettings(name: page.title, arguments: page));
   }
 }
