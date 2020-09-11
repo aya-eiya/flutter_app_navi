@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -45,6 +46,12 @@ class _MainPageState extends State<MainPage> {
           observers: <NavigatorObserver>[_PageNaviObserver(_changeTitle)],
           onGenerateRoute: (RouteSettings settings) =>
               _PageRouteBuilder.createRoute(() => const _Page1())));
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(StringProperty('title', title));
+  }
 }
 
 class _PageNaviObserver extends NavigatorObserver {
